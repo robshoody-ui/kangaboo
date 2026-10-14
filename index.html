@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4efe4">
+  <title>Känguru-Punch</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #24332c;
+      background: #f4efe4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px 18px;
+      background:
+        radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.82), transparent 55%),
+        #f4efe4;
+    }
+
+    main {
+      width: min(100%, 680px);
+      text-align: center;
+    }
+
+    .stage {
+      position: relative;
+      display: block;
+      width: min(100%, 520px);
+      margin: 0 auto;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid rgba(65, 69, 52, 0.16);
+      border-radius: 28px;
+      background: #f8f2e3;
+      box-shadow: 0 24px 70px rgba(66, 54, 38, 0.16);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .stage:focus-visible {
+      outline: 4px solid #d74732;
+      outline-offset: 5px;
+    }
+
+    .stage canvas,
+    .stage img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .stage img[hidden],
+    .stage canvas[hidden] {
+      display: none;
+    }
+
+    .stage:disabled {
+      cursor: progress;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <button class="stage" id="punchButton" type="button" aria-label="Känguru-Schlag abspielen">
+      <canvas id="stillFrame" width="376" height="326" aria-hidden="true"></canvas>
+      <img id="animation" src="kangaroo_punch.gif" alt="Ein Känguru schlägt mit seinem Boxhandschuh nach vorne." hidden>
+    </button>
+  </main>
+
+  <script>
+    const button = document.getElementById("punchButton");
+    const canvas = document.getElementById("stillFrame");
+    const animation = document.getElementById("animation");
+    const context = canvas.getContext("2d");
+    const runDuration = 2000;
+
+    function showError(message) {
+      button.disabled = true;
+      button.setAttribute("aria-label", message);
+    }
+
+    function prepareStillFrame() {
+      const source = new Image();
+      source.onload = () => {
+        canvas.width = source.naturalWidth;
+        canvas.height = source.naturalHeight;
+        context.drawImage(source, 0, 0);
+
+        const patch = document.createElement("canvas");
+        patch.width = 32;
+        patch.height = 34;
+        const patchContext = patch.getContext("2d");
+        patchContext.drawImage(source, 48, 10, 32, 34, 0, 0, 32, 34);
+        patchContext.globalCompositeOperation = "destination-in";
+        const feather = patchContext.createRadialGradient(16, 17, 19, 16, 17, 24);
+        feather.addColorStop(0, "rgba(0, 0, 0, 1)");
+        feather.addColorStop(0.72, "rgba(0, 0, 0, 1)");
+        feather.addColorStop(1, "rgba(0, 0, 0, 0)");
+        patchContext.fillStyle = feather;
+        patchContext.fillRect(0, 0, patch.width, patch.height);
+        context.drawImage(patch, 12, 10);
+      };
+      source.onerror = () => showError("Das Standbild 01.png konnte nicht geladen werden.");
+      source.src = "01.png";
+    }
+
+    function playPunch() {
+      if (button.disabled) return;
+
+      button.disabled = true;
+      canvas.hidden = true;
+      animation.hidden = false;
+
+      animation.onload = () => {
+        window.setTimeout(() => {
+          animation.hidden = true;
+          canvas.hidden = false;
+          button.disabled = false;
+        }, runDuration - 35);
+      };
+      animation.onerror = () => {
+        showError("Das GIF kangaroo_punch.gif konnte nicht geladen werden.");
+        animation.hidden = true;
+        canvas.hidden = false;
+      };
+      animation.src = `kangaroo_punch.gif?play=${Date.now()}`;
+    }
+
+    button.addEventListener("click", playPunch);
+    prepareStillFrame();
+  </script>
+</body>
+</html>
